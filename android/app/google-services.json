@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "26209738343",
+    "project_id": "motorz-3a171",
+    "storage_bucket": "motorz-3a171.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:26209738343:android:f1b8e1a77aaa608bbbfec2",
+        "android_client_info": {
+          "package_name": "com.motorz.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0M79eRyhtSv6BgNkN7hz4V58y-DZi2z4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

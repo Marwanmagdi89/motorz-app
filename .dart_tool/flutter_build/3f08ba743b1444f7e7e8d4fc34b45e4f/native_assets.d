@@ -1,0 +1,1 @@
+ /Users/marwanmagdi/Documents/Webview\ SourceCode/primeweb_1.0.11/TabDeal\ Application/.dart_tool/flutter_build/3f08ba743b1444f7e7e8d4fc34b45e4f/native_assets.yaml: 
