@@ -11,6 +11,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:prime_web/helpers/utils.dart';
 import '../main.dart';
 import '../widgets/no_internet_widget.dart';
 import '../helpers/Constant.dart';
@@ -28,15 +29,13 @@ class LoadWebView extends StatefulWidget {
   String url = '';
   bool webUrl = true;
 
-  LoadWebView({required this.url, required this.webUrl, Key? key})
-      : super(key: key);
+  LoadWebView({required this.url, required this.webUrl, Key? key}) : super(key: key);
 
   @override
   _LoadWebViewState createState() => _LoadWebViewState();
 }
 
-class _LoadWebViewState extends State<LoadWebView>
-    with SingleTickerProviderStateMixin {
+class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStateMixin {
   final GlobalKey webViewKey = GlobalKey();
 
   late PullToRefreshController _pullToRefreshController;
@@ -51,14 +50,14 @@ class _LoadWebViewState extends State<LoadWebView>
   bool noInternet = false;
   late AnimationController animationController;
   late Animation<double> animation;
-  final expiresDate =
-      DateTime.now().add(Duration(days: 7)).millisecondsSinceEpoch;
+  final expiresDate = DateTime.now().add(Duration(days: 7)).millisecondsSinceEpoch;
   String _connectionStatus = 'ConnectivityResult.none';
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   var browserOptions;
   bool _validURL = false;
   bool canGoBack = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,8 +65,7 @@ class _LoadWebViewState extends State<LoadWebView>
     NoInternet.initConnectivity().then((value) => setState(() {
           _connectionStatus = value;
         }));
-    _connectivitySubscription =
-        _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
       NoInternet.updateConnectionStatus(result).then((value) {
         _connectionStatus = value;
         if (_connectionStatus != 'ConnectivityResult.none') {
@@ -88,8 +86,7 @@ class _LoadWebViewState extends State<LoadWebView>
           if (Platform.isAndroid) {
             webViewController!.reload();
           } else if (Platform.isIOS) {
-            webViewController!.loadUrl(
-                urlRequest: URLRequest(url: await webViewController!.getUrl()));
+            webViewController!.loadUrl(urlRequest: URLRequest(url: await webViewController!.getUrl()));
           }
         },
       );
@@ -101,8 +98,7 @@ class _LoadWebViewState extends State<LoadWebView>
       vsync: this,
       duration: Duration(milliseconds: 1000),
     )..repeat();
-    animation = Tween(begin: 0.0, end: 1.0).animate(animationController)
-      ..addListener(() {});
+    animation = Tween(begin: 0.0, end: 1.0).animate(animationController)..addListener(() {});
   }
 
   @override
@@ -157,8 +153,7 @@ class _LoadWebViewState extends State<LoadWebView>
         onWillPop: () => _exitApp(context),
         child: !widget.webUrl
             ? InAppWebView(
-                initialData: InAppWebViewInitialData(
-                    data: widget.url, mimeType: 'text/html', encoding: "utf8"),
+                initialData: InAppWebViewInitialData(data: widget.url, mimeType: 'text/html', encoding: "utf8"),
                 initialOptions: InAppWebViewGroupOptions(
                     crossPlatform: InAppWebViewOptions(
                       useShouldOverrideUrlLoading: true,
@@ -168,11 +163,19 @@ class _LoadWebViewState extends State<LoadWebView>
                       transparentBackground: true,
                       allowFileAccessFromFileURLs: true,
                     ),
-                    android: AndroidInAppWebViewOptions(
-                        useHybridComposition: true, defaultFontSize: 32),
+                    android: AndroidInAppWebViewOptions(useHybridComposition: true, defaultFontSize: 32),
                     ios: IOSInAppWebViewOptions(
                       allowsInlineMediaPlayback: true,
                     )),
+                onConsoleMessage: (controller, consoleMessage) async {
+                  if (consoleMessage.message.contains("profile image:")) {
+                    String data = consoleMessage.message.replaceAll("profile image:", "").trim();
+                    String url = data.split(";").first;
+                    String accessToken = data.split(";").last;
+                    await pickProfileImage(context, url, accessToken);
+                    controller.reload();
+                  }
+                },
                 gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
                   Factory<OneSequenceGestureRecognizer>(
                     () => EagerGestureRecognizer(),
@@ -196,14 +199,11 @@ class _LoadWebViewState extends State<LoadWebView>
                 children: [
                   _validURL
                       ? InAppWebView(
-                          initialUrlRequest:
-                              URLRequest(url: Uri.parse(widget.url)),
+                          initialUrlRequest: URLRequest(url: Uri.parse(widget.url)),
                           initialOptions: options,
                           pullToRefreshController: _pullToRefreshController,
-                          gestureRecognizers: <Factory<
-                              OneSequenceGestureRecognizer>>{
-                            Factory<OneSequenceGestureRecognizer>(
-                                () => EagerGestureRecognizer()),
+                          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                            Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
                           },
                           onWebViewCreated: (controller) async {
                             webViewController = controller;
@@ -222,26 +222,14 @@ class _LoadWebViewState extends State<LoadWebView>
                             int currentScrollY = y;
                             if (currentScrollY > _previousScrollY) {
                               _previousScrollY = currentScrollY;
-                              if (!context
-                                  .read<NavigationBarProvider>()
-                                  .animationController
-                                  .isAnimating) {
-                                context
-                                    .read<NavigationBarProvider>()
-                                    .animationController
-                                    .forward();
+                              if (!context.read<NavigationBarProvider>().animationController.isAnimating) {
+                                context.read<NavigationBarProvider>().animationController.forward();
                               }
                             } else {
                               _previousScrollY = currentScrollY;
 
-                              if (!context
-                                  .read<NavigationBarProvider>()
-                                  .animationController
-                                  .isAnimating) {
-                                context
-                                    .read<NavigationBarProvider>()
-                                    .animationController
-                                    .reverse();
+                              if (!context.read<NavigationBarProvider>().animationController.isAnimating) {
+                                context.read<NavigationBarProvider>().animationController.reverse();
                               }
                             }
                           },
@@ -272,10 +260,8 @@ class _LoadWebViewState extends State<LoadWebView>
                                           "var head = document.getElementsByTagName('header')[0];" +
                                           "head.parentNode.removeChild(head);" +
                                           "})()")
-                                  .then((value) => debugPrint(
-                                      'Page finished loading Javascript'))
-                                  .catchError(
-                                      (onError) => debugPrint('$onError'));
+                                  .then((value) => debugPrint('Page finished loading Javascript'))
+                                  .catchError((onError) => debugPrint('$onError'));
                             }
                             if (hideFooter == true) {
                               webViewController!
@@ -284,10 +270,8 @@ class _LoadWebViewState extends State<LoadWebView>
                                           "var footer = document.getElementsByTagName('footer')[0];" +
                                           "footer.parentNode.removeChild(footer);" +
                                           "})()")
-                                  .then((value) => debugPrint(
-                                      'Page finished loading Javascript'))
-                                  .catchError(
-                                      (onError) => debugPrint('$onError'));
+                                  .then((value) => debugPrint('Page finished loading Javascript'))
+                                  .catchError((onError) => debugPrint('$onError'));
                             }
                           },
                           onLoadError: (controller, url, code, message) async {
@@ -296,16 +280,11 @@ class _LoadWebViewState extends State<LoadWebView>
 
                             setState(() {
                               isLoading = false;
-                              if (Platform.isAndroid &&
-                                  code == -2 &&
-                                  message == 'net::ERR_INTERNET_DISCONNECTED') {
+                              if (Platform.isAndroid && code == -2 && message == 'net::ERR_INTERNET_DISCONNECTED') {
                                 noInternet = true;
                                 return;
                               }
-                              if (Platform.isIOS &&
-                                  code == -1009 &&
-                                  message ==
-                                      'The Internet connection appears to be offline.') {
+                              if (Platform.isIOS && code == -1009 && message == 'The Internet connection appears to be offline.') {
                                 noInternet = true;
                                 return;
                               }
@@ -314,8 +293,7 @@ class _LoadWebViewState extends State<LoadWebView>
                               }
                             });
                           },
-                          onLoadHttpError:
-                              (controller, url, statusCode, description) {
+                          onLoadHttpError: (controller, url, statusCode, description) {
                             _pullToRefreshController.endRefreshing();
                             // print(
                             //     '---load http error----$description==$statusCode');
@@ -324,32 +302,22 @@ class _LoadWebViewState extends State<LoadWebView>
                               isLoading = false;
                             });
                           },
-                          onReceivedServerTrustAuthRequest:
-                              (controller, challenge) async {
-                            return ServerTrustAuthResponse(
-                                action: ServerTrustAuthResponseAction.PROCEED);
+                          onReceivedServerTrustAuthRequest: (controller, challenge) async {
+                            return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
                           },
-                          androidOnGeolocationPermissionsShowPrompt:
-                              (controller, origin) async {
+                          androidOnGeolocationPermissionsShowPrompt: (controller, origin) async {
                             await Permission.location.request();
-                            return Future.value(
-                                GeolocationPermissionShowPromptResponse(
-                                    origin: origin, allow: true, retain: true));
+                            return Future.value(GeolocationPermissionShowPromptResponse(origin: origin, allow: true, retain: true));
                           },
-                          androidOnPermissionRequest:
-                              (controller, origin, resources) async {
-                            if (resources.contains(
-                                'android.webkit.resource.AUDIO_CAPTURE')) {
+                          androidOnPermissionRequest: (controller, origin, resources) async {
+                            if (resources.contains('android.webkit.resource.AUDIO_CAPTURE')) {
                               await Permission.microphone.request();
                             }
-                            if (resources.contains(
-                                'android.webkit.resource.VIDEO_CAPTURE')) {
+                            if (resources.contains('android.webkit.resource.VIDEO_CAPTURE')) {
                               await Permission.camera.request();
                             }
 
-                            return PermissionRequestResponse(
-                                resources: resources,
-                                action: PermissionRequestResponseAction.GRANT);
+                            return PermissionRequestResponse(resources: resources, action: PermissionRequestResponseAction.GRANT);
                           },
                           onProgressChanged: (controller, progress) {
                             if (progress == 100) {
@@ -360,14 +328,12 @@ class _LoadWebViewState extends State<LoadWebView>
                               this.progress = progress / 100;
                             });
                           },
-                          shouldOverrideUrlLoading:
-                              (controller, navigationAction) async {
+                          shouldOverrideUrlLoading: (controller, navigationAction) async {
                             var url = navigationAction.request.url.toString();
                             var uri = Uri.parse(url);
 
                             if (Platform.isIOS && url.contains("geo")) {
-                              url = url.replaceFirst(
-                                  'geo://', 'http://maps.apple.com/');
+                              url = url.replaceFirst('geo://', 'http://maps.apple.com/');
                             } else if (url.contains("tel:") ||
                                 url.contains("mailto:") ||
                                 url.contains("play.google.com") ||
@@ -437,8 +403,7 @@ class _LoadWebViewState extends State<LoadWebView>
 
                           //   return true;
                           // },
-                          onDownloadStartRequest:
-                              (controller, downloadStartRrquest) async {
+                          onDownloadStartRequest: (controller, downloadStartRrquest) async {
                             // print('=--download--$url');
 
                             enableStoragePermision().then((status) async {
@@ -449,41 +414,32 @@ class _LoadWebViewState extends State<LoadWebView>
                                   Dio dio = Dio();
                                   String fileName;
                                   if (url.toString().lastIndexOf('?') > 0) {
-                                    fileName = url.toString().substring(
-                                        url.toString().lastIndexOf('/') + 1,
-                                        url.toString().lastIndexOf('?'));
+                                    fileName = url.toString().substring(url.toString().lastIndexOf('/') + 1, url.toString().lastIndexOf('?'));
                                   } else {
-                                    fileName = url.toString().substring(
-                                        url.toString().lastIndexOf('/') + 1);
+                                    fileName = url.toString().substring(url.toString().lastIndexOf('/') + 1);
                                   }
                                   String savePath = await getFilePath(fileName);
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                     content: const Text('Downloading file..'),
                                   ));
-                                  await dio.download(url.toString(), savePath,
-                                      onReceiveProgress: (rec, total) {});
+                                  await dio.download(url.toString(), savePath, onReceiveProgress: (rec, total) {});
 
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                     content: const Text('Download Complete'),
                                   ));
                                 } on Exception catch (_) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                     content: const Text('Downloading failed'),
                                   ));
                                 }
                               } else {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: const Text('Permision denied'),
                                 ));
                               }
                             });
                           },
-                          onUpdateVisitedHistory:
-                              (controller, url, androidIsReload) async {
+                          onUpdateVisitedHistory: (controller, url, androidIsReload) async {
                             setState(() {
                               this.url = url.toString();
                             });
@@ -531,15 +487,9 @@ class _LoadWebViewState extends State<LoadWebView>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Theme.of(context)
-                                      .progressIndicatorTheme
-                                      .color!,
-                                  Theme.of(context)
-                                      .progressIndicatorTheme
-                                      .refreshBackgroundColor!,
-                                  Theme.of(context)
-                                      .progressIndicatorTheme
-                                      .linearTrackColor!,
+                                  Theme.of(context).progressIndicatorTheme.color!,
+                                  Theme.of(context).progressIndicatorTheme.refreshBackgroundColor!,
+                                  Theme.of(context).progressIndicatorTheme.linearTrackColor!,
                                 ],
                                 stops: const [0.1, 1.0, 0.1],
                               ),
@@ -600,8 +550,7 @@ class _LoadWebViewState extends State<LoadWebView>
         externalStorageDirPath = directory?.path;
       }
     } else if (Platform.isIOS) {
-      externalStorageDirPath =
-          (await getApplicationDocumentsDirectory()).absolute.path;
+      externalStorageDirPath = (await getApplicationDocumentsDirectory()).absolute.path;
     }
     path = '$externalStorageDirPath/$uniqueFileName';
     return path;
