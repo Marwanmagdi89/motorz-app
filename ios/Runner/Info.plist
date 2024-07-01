@@ -99,5 +99,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+    <string>Camera used for creating post images</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Used for audio recordings</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>used for telling the user why the app is requesting access to the user's photo library.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>A message that tells the user why the app is requesting access to the user's location</string>
 </dict>
 </plist>

@@ -79,6 +79,13 @@ Future main() async {
   if (isStoragePermissionEnabled) {
     await enableStoragePermision();
   }
+  print("Requisting camera permission");
+  if ((await Permission.camera.request()).isGranted) {
+    print("Camera permission granted");
+  } else {
+    print("Camera permission denied");
+  }
+
   await _flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
@@ -124,7 +131,27 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  bool showAppContent = true;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    setState(() {
+      showAppContent = state == AppLifecycleState.resumed;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([
@@ -154,11 +181,16 @@ class _MyAppState extends State<MyApp> {
                 return CupertinoPageRoute(builder: (_) => SettingsScreen());
             }
           },
-          home: showSplashScreen
-              ? SplashScreen()
-              : MyHomePage(
-                  webUrl: webinitialUrl,
-                ),
+          home: Visibility(
+            maintainAnimation: true,
+              maintainSize: true,
+              maintainState: true,
+              visible: showAppContent,
+              child: showSplashScreen
+                  ? SplashScreen()
+                  : MyHomePage(
+                      webUrl: webinitialUrl,
+                    )),
         );
       }),
     );

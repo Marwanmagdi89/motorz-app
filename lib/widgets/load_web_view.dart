@@ -38,7 +38,7 @@ class LoadWebView extends StatefulWidget {
 class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStateMixin {
   final GlobalKey webViewKey = GlobalKey();
 
-  late PullToRefreshController _pullToRefreshController;
+  // late PullToRefreshController _pullToRefreshController;
   CookieManager cookieManager = CookieManager.instance();
   InAppWebViewController? webViewController;
   double progress = 0;
@@ -79,20 +79,20 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
         }
       });
     });
-    try {
-      _pullToRefreshController = PullToRefreshController(
-        options: PullToRefreshOptions(color: primaryColor),
-        onRefresh: () async {
-          if (Platform.isAndroid) {
-            webViewController!.reload();
-          } else if (Platform.isIOS) {
-            webViewController!.loadUrl(urlRequest: URLRequest(url: await webViewController!.getUrl()));
-          }
-        },
-      );
-    } on Exception catch (e) {
-      // print(e);
-    }
+    // try {
+    //   // _pullToRefreshController = PullToRefreshController(
+    //   //   options: PullToRefreshOptions(color: primaryColor),
+    //   //   onRefresh: () async {
+    //   //     if (Platform.isAndroid) {
+    //   //       webViewController!.reload();
+    //   //     } else if (Platform.isIOS) {
+    //   //       webViewController!.loadUrl(urlRequest: URLRequest(url: await webViewController!.getUrl()));
+    //   //     }
+    //   //   },
+    //   // );
+    // } on Exception catch (e) {
+    //   // print(e);
+    // }
 
     animationController = AnimationController(
       vsync: this,
@@ -122,7 +122,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
           javaScriptEnabled: true,
           javaScriptCanOpenWindowsAutomatically: true,
           cacheEnabled: true,
-          supportZoom: true,
+          supportZoom: false,
           userAgent:
               "Mozilla/5.0 (Linux; Android 9; LG-H870 Build/PKQ1.190522.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.106 Mobile Safari/537.36",
           verticalScrollBarEnabled: false,
@@ -140,6 +140,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    print(url);
     return GestureDetector(
       onHorizontalDragEnd: (dragEndDetails) async {
         // Swiping in right direction.
@@ -161,6 +162,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                       verticalScrollBarEnabled: false,
                       horizontalScrollBarEnabled: false,
                       transparentBackground: true,
+                      supportZoom: false,
                       allowFileAccessFromFileURLs: true,
                     ),
                     android: AndroidInAppWebViewOptions(useHybridComposition: true, defaultFontSize: 32),
@@ -201,7 +203,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                       ? InAppWebView(
                           initialUrlRequest: URLRequest(url: Uri.parse(widget.url)),
                           initialOptions: options,
-                          pullToRefreshController: _pullToRefreshController,
+
+                          // pullToRefreshController: _pullToRefreshController,
                           gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
                             Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
                           },
@@ -245,7 +248,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                             });
                           },
                           onLoadStop: (controller, url) async {
-                            _pullToRefreshController.endRefreshing();
+                            // _pullToRefreshController.endRefreshing();
 
                             setState(() {
                               this.url = url.toString();
@@ -275,7 +278,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                             }
                           },
                           onLoadError: (controller, url, code, message) async {
-                            _pullToRefreshController.endRefreshing();
+                            // _pullToRefreshController.endRefreshing();
                             // print('---load error----==$code ---$message');
 
                             setState(() {
@@ -294,7 +297,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                             });
                           },
                           onLoadHttpError: (controller, url, statusCode, description) {
-                            _pullToRefreshController.endRefreshing();
+                            // _pullToRefreshController.endRefreshing();
                             // print(
                             //     '---load http error----$description==$statusCode');
                             setState(() {
@@ -321,7 +324,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                           },
                           onProgressChanged: (controller, progress) {
                             if (progress == 100) {
-                              _pullToRefreshController.endRefreshing();
+                              // _pullToRefreshController.endRefreshing();
                               isLoading = false;
                             }
                             setState(() {
