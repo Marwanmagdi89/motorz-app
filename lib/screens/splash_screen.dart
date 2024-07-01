@@ -54,10 +54,13 @@ class _SplashScreenState extends State<SplashScreen> {
           width: MediaQuery.of(context).size.width,
           color: splashBackColor,
           child: Center(
-            child: SvgPicture.asset(
-              Theme.of(context).colorScheme.splashLogo,
-              width: 200,
-              height: 200,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2000),
+              child: Image.asset(
+                iconPath + 'splash_icon.png',
+                width: 200,
+                height: 200,
+              ),
             ),
           )),
     );

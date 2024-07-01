@@ -182,15 +182,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             }
           },
           home: Visibility(
-            maintainAnimation: true,
+              maintainAnimation: true,
               maintainSize: true,
               maintainState: true,
               visible: showAppContent,
-              child: showSplashScreen
-                  ? SplashScreen()
-                  : MyHomePage(
-                      webUrl: webinitialUrl,
-                    )),
+              child: SplashScreen()),
         );
       }),
     );
