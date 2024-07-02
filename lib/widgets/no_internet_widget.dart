@@ -74,9 +74,7 @@ class _NoInternetWidgetState extends State<NoInternetWidget> {
               : TextButton(
                   child: const Text('Retry'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    primary: Theme.of(context).primaryColor,
-                    onPrimary: Theme.of(context).cardColor,
+                    foregroundColor: Theme.of(context).cardColor, backgroundColor: Theme.of(context).primaryColor, padding: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                   onPressed: () {
                     setState(() {
