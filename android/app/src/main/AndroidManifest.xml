@@ -106,7 +106,7 @@
             android:value="ca-app-pub-3940256099942544~3347511713"/>
         <meta-data
         android:name="com.onesignal.messaging.default_notification_icon"
-        android:resource="@mipmap/ic_stat_onesignal_default" />
+        android:resource="@mipmap/ic_launcher" />
         <meta-data
         android:name="com.onesignal.NotificationAccentColor.DEFAULT"
         android:value="FFFFFF" />
