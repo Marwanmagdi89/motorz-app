@@ -72,6 +72,10 @@ Future main() async {
   // OneSignal.shared.promptUserForPushNotificationPermission().then((accepted) {
   //   print("Accepted permission: $accepted");
   // });
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    systemNavigationBarColor: Colors.transparent, // Set this to your desired color
+    systemNavigationBarIconBrightness: Brightness.dark, // Change the icon color
+  ));
   pref = await SharedPreferences.getInstance();
   if (showInterstitialAds) {
     AdMobService.initialize();

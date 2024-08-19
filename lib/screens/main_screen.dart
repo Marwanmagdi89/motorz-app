@@ -162,7 +162,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         child: SafeArea(
           top: Platform.isIOS ? false : true,
           child: Scaffold(
-            extendBody: true,
+            // extendBody: true,
+resizeToAvoidBottomInset: false,
 
             // extendBody: true,
             bottomNavigationBar: showBottomNavigationBar

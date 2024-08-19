@@ -19,6 +19,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool isSplashFinished = false;
+
   @override
   void initState() {
     super.initState();
@@ -30,13 +32,12 @@ class _SplashScreenState extends State<SplashScreen> {
     return Timer(duration, () async {
       SharedPreferences pref = await SharedPreferences.getInstance();
       if (showOnboardingScreen && (pref.getBool('isFirstTimeUser') ?? true)) {
-        navigatorKey.currentState!.pushReplacement(
-            MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
       } else {
-        navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
-            builder: (_) => MyHomePage(
-                  webUrl: webinitialUrl,
-                )));
+        // navigatorKey.currentState!.pushReplacement(MaterialPageRoute(
+        //     builder: (_) => ));
+        isSplashFinished = true;
+        setState(() {});
       }
     });
   }
@@ -44,25 +45,31 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark));
-    return Scaffold(
-      body: Container(
-          padding: EdgeInsets.zero,
-          height: double.infinity,
-          width: MediaQuery.of(context).size.width,
-          color: splashBackColor,
-          child: Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2000),
-              child: Image.asset(
-                iconPath + 'splash_icon.png',
-                width: 200,
-                height: 200,
-              ),
-            ),
-          )),
+        statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.light, statusBarBrightness: Brightness.dark));
+    return Stack(
+      children: [
+        MyHomePage(
+          webUrl: webinitialUrl,
+        ),
+        if (!isSplashFinished)
+          Scaffold(
+            body: Container(
+                padding: EdgeInsets.zero,
+                height: double.infinity,
+                width: MediaQuery.of(context).size.width,
+                color: splashBackColor,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2000),
+                    child: Image.asset(
+                      iconPath + 'splash_icon.png',
+                      width: 200,
+                      height: 200,
+                    ),
+                  ),
+                )),
+          ),
+      ],
     );
   }
 }
