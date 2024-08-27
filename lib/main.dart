@@ -190,7 +190,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               maintainAnimation: true,
               maintainSize: true,
               maintainState: true,
-              visible: showAppContent,
+              visible: true,
               child: SplashScreen()),
         );
       }),

@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, unused_import, implementation_imports
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 
@@ -12,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:prime_web/helpers/utils.dart';
+import 'package:share_plus/share_plus.dart';
 import '../main.dart';
 import '../widgets/no_internet_widget.dart';
 import '../helpers/Constant.dart';
@@ -178,6 +180,12 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                     await pickProfileImage(context, url, accessToken);
                     controller.reload();
                   }
+                  print(consoleMessage.message);
+                  if (consoleMessage.message.contains("share_event;")) {
+                    String data = consoleMessage.message.replaceAll("share_event;", "").trim();
+                    print(data);
+
+                  }
                 },
                 gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
                   Factory<OneSequenceGestureRecognizer>(
@@ -237,6 +245,7 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                               }
                             }
                           },
+
                           onLoadStart: (controller, url) async {
                             setState(() {
                               isLoading = true;
@@ -448,7 +457,21 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                               this.url = url.toString();
                             });
                           },
-                          onConsoleMessage: (controller, message) {},
+                          onConsoleMessage: (controller, consoleMessage) {
+                            print("consoleMessage.message");
+                            print(consoleMessage.message);
+                            if (consoleMessage.message.contains("share_event;")) {
+                              String data = consoleMessage.message.replaceAll("share_event;", "").trim();
+                              Map values = jsonDecode(data);
+                              print(jsonDecode(data));
+                              print(jsonDecode(data)['title']);
+
+                              Share.shareWithResult("${values['title']}\nhttps://motorzkw.com${values['url']}\n${values['text']}",
+                              subject: '',
+                              );
+
+                            }
+                          },
                         )
                       : Center(
                           child: Text(
