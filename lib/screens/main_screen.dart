@@ -159,42 +159,46 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       child: GestureDetector(
         onTap: () =>
             context.read<NavigationBarProvider>().animationController.reverse(),
-        child: SafeArea(
-          top: Platform.isIOS ? false : true,
-          child: Scaffold(
-            // extendBody: true,
-resizeToAvoidBottomInset: false,
+        child: Container(
+          color: Colors.white,
+          child: SafeArea(
+            top: Platform.isIOS ? false : true,
+            bottom: true,
+            child: Scaffold(
+              // extendBody: true,
+          resizeToAvoidBottomInset: false,
 
-            // extendBody: true,
-            bottomNavigationBar: showBottomNavigationBar
-                ? FadeTransition(
-                    opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
-                        CurvedAnimation(
-                            parent: navigationContainerAnimationController,
-                            curve: Curves.easeInOut)),
-                    child: SlideTransition(
-                        position: Tween<Offset>(
-                                begin: Offset.zero, end: const Offset(0.0, 1.0))
-                            .animate(CurvedAnimation(
-                                parent: navigationContainerAnimationController,
-                                curve: Curves.easeInOut)),
-                        child: _bottomNavigationBar),
-                  )
-                : null,
-            body: showBottomNavigationBar
-                ? IndexedStack(
-                    index: _selectedIndex,
-                    children: _tabs,
-                  )
-                : Navigator(
-                    key: _navigatorKeys[0],
-                    onGenerateRoute: (routeSettings) {
-                      return MaterialPageRoute(
-                          builder: (_) => HomeScreen(
-                                widget.webUrl,
-                              ));
-                    },
-                  ),
+              extendBody: true,
+              bottomNavigationBar: showBottomNavigationBar
+                  ? FadeTransition(
+                      opacity: Tween<double>(begin: 1.0, end: 0.0).animate(
+                          CurvedAnimation(
+                              parent: navigationContainerAnimationController,
+                              curve: Curves.easeInOut)),
+                      child: SlideTransition(
+                          position: Tween<Offset>(
+                                  begin: Offset.zero, end: const Offset(0.0, 1.0))
+                              .animate(CurvedAnimation(
+                                  parent: navigationContainerAnimationController,
+                                  curve: Curves.easeInOut)),
+                          child: _bottomNavigationBar),
+                    )
+                  : null,
+              body: showBottomNavigationBar
+                  ? IndexedStack(
+                      index: _selectedIndex,
+                      children: _tabs,
+                    )
+                  : Navigator(
+                      key: _navigatorKeys[0],
+                      onGenerateRoute: (routeSettings) {
+                        return MaterialPageRoute(
+                            builder: (_) => HomeScreen(
+                                  widget.webUrl,
+                                ));
+                      },
+                    ),
+            ),
           ),
         ),
       ),

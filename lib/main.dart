@@ -176,6 +176,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           title: appName,
           debugShowCheckedModeBanner: false,
           themeMode: value.getTheme(),
+          color: Colors.white,
           theme: AppThemes.lightTheme,
           darkTheme: AppThemes.darkTheme,
           navigatorKey: navigatorKey,
