@@ -431,12 +431,12 @@ class _LoadWebViewState extends State<LoadWebView>
                             }
                             print(
                                 "navigationAction.request.url ${navigationAction.request.url}");
-                            if (navigationAction.request.url
+                            if (Platform.isIOS && (navigationAction.request.url
                                     .toString()
                                     .contains("https://wa.me/") ||
                                 navigationAction.request.url
                                     .toString()
-                                    .contains("whatsapp://send")) {
+                                    .contains("whatsapp://send"))) {
                               return NavigationActionPolicy.CANCEL;
                             }
                             return NavigationActionPolicy.ALLOW;
@@ -550,7 +550,7 @@ class _LoadWebViewState extends State<LoadWebView>
                                   "https://api.whatsapp.com/send/?phone=%2B${data.replaceAll("+", '')}&text&type=phone_number&app_absent=0";
                               print("========= $data");
 
-                              if (await canLaunchUrl(Uri.parse(iosUrl))) {
+                              if (Platform.isIOS && await canLaunchUrl(Uri.parse(iosUrl))) {
                                 await launchUrl(Uri.parse(iosUrl));
                               }
                             }
