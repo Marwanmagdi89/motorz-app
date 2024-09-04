@@ -31,13 +31,15 @@ class LoadWebView extends StatefulWidget {
   String url = '';
   bool webUrl = true;
 
-  LoadWebView({required this.url, required this.webUrl, Key? key}) : super(key: key);
+  LoadWebView({required this.url, required this.webUrl, Key? key})
+      : super(key: key);
 
   @override
   _LoadWebViewState createState() => _LoadWebViewState();
 }
 
-class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStateMixin {
+class _LoadWebViewState extends State<LoadWebView>
+    with SingleTickerProviderStateMixin {
   final GlobalKey webViewKey = GlobalKey();
 
   // late PullToRefreshController _pullToRefreshController;
@@ -52,7 +54,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
   bool noInternet = false;
   late AnimationController animationController;
   late Animation<double> animation;
-  final expiresDate = DateTime.now().add(Duration(days: 7)).millisecondsSinceEpoch;
+  final expiresDate =
+      DateTime.now().add(Duration(days: 7)).millisecondsSinceEpoch;
   String _connectionStatus = 'ConnectivityResult.none';
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
@@ -67,7 +70,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
     NoInternet.initConnectivity().then((value) => setState(() {
           _connectionStatus = value;
         }));
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
       NoInternet.updateConnectionStatus(result).then((value) {
         _connectionStatus = value;
         if (_connectionStatus != 'ConnectivityResult.none') {
@@ -100,7 +104,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
       vsync: this,
       duration: Duration(milliseconds: 1000),
     )..repeat();
-    animation = Tween(begin: 0.0, end: 1.0).animate(animationController)..addListener(() {});
+    animation = Tween(begin: 0.0, end: 1.0).animate(animationController)
+      ..addListener(() {});
   }
 
   @override
@@ -125,7 +130,6 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
           javaScriptCanOpenWindowsAutomatically: true,
           cacheEnabled: true,
           supportZoom: false,
-
           userAgent:
               "Mozilla/5.0 (Linux; Android 9; LG-H870 Build/PKQ1.190522.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.106 Mobile Safari/537.36",
           verticalScrollBarEnabled: false,
@@ -157,7 +161,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
         onWillPop: () => _exitApp(context),
         child: !widget.webUrl
             ? InAppWebView(
-                initialData: InAppWebViewInitialData(data: widget.url, mimeType: 'text/html', encoding: "utf8"),
+                initialData: InAppWebViewInitialData(
+                    data: widget.url, mimeType: 'text/html', encoding: "utf8"),
                 initialOptions: InAppWebViewGroupOptions(
                     crossPlatform: InAppWebViewOptions(
                       useShouldOverrideUrlLoading: true,
@@ -168,13 +173,16 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                       supportZoom: false,
                       allowFileAccessFromFileURLs: true,
                     ),
-                    android: AndroidInAppWebViewOptions(useHybridComposition: true, defaultFontSize: 32),
+                    android: AndroidInAppWebViewOptions(
+                        useHybridComposition: true, defaultFontSize: 32),
                     ios: IOSInAppWebViewOptions(
                       allowsInlineMediaPlayback: true,
                     )),
                 onConsoleMessage: (controller, consoleMessage) async {
                   if (consoleMessage.message.contains("profile image:")) {
-                    String data = consoleMessage.message.replaceAll("profile image:", "").trim();
+                    String data = consoleMessage.message
+                        .replaceAll("profile image:", "")
+                        .trim();
                     String url = data.split(";").first;
                     String accessToken = data.split(";").last;
                     await pickProfileImage(context, url, accessToken);
@@ -182,9 +190,10 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                   }
                   print(consoleMessage.message);
                   if (consoleMessage.message.contains("share_event;")) {
-                    String data = consoleMessage.message.replaceAll("share_event;", "").trim();
+                    String data = consoleMessage.message
+                        .replaceAll("share_event;", "")
+                        .trim();
                     print(data);
-
                   }
                 },
                 gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
@@ -201,6 +210,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                   });
                 },
                 shouldOverrideUrlLoading: (controller, navigationAction) async {
+                  print(
+                      "navigationAction.request.url ${navigationAction.request.url}");
                   return NavigationActionPolicy.ALLOW;
                 },
               )
@@ -210,12 +221,15 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                 children: [
                   _validURL
                       ? InAppWebView(
-                          initialUrlRequest: URLRequest(url: Uri.parse(widget.url)),
+                          initialUrlRequest:
+                              URLRequest(url: Uri.parse(widget.url)),
                           initialOptions: options,
 
                           // pullToRefreshController: _pullToRefreshController,
-                          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                            Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+                          gestureRecognizers: <Factory<
+                              OneSequenceGestureRecognizer>>{
+                            Factory<OneSequenceGestureRecognizer>(
+                                () => EagerGestureRecognizer()),
                           },
                           onWebViewCreated: (controller) async {
                             webViewController = controller;
@@ -234,14 +248,26 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                             int currentScrollY = y;
                             if (currentScrollY > _previousScrollY) {
                               _previousScrollY = currentScrollY;
-                              if (!context.read<NavigationBarProvider>().animationController.isAnimating) {
-                                context.read<NavigationBarProvider>().animationController.forward();
+                              if (!context
+                                  .read<NavigationBarProvider>()
+                                  .animationController
+                                  .isAnimating) {
+                                context
+                                    .read<NavigationBarProvider>()
+                                    .animationController
+                                    .forward();
                               }
                             } else {
                               _previousScrollY = currentScrollY;
 
-                              if (!context.read<NavigationBarProvider>().animationController.isAnimating) {
-                                context.read<NavigationBarProvider>().animationController.reverse();
+                              if (!context
+                                  .read<NavigationBarProvider>()
+                                  .animationController
+                                  .isAnimating) {
+                                context
+                                    .read<NavigationBarProvider>()
+                                    .animationController
+                                    .reverse();
                               }
                             }
                           },
@@ -273,8 +299,10 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                                           "var head = document.getElementsByTagName('header')[0];" +
                                           "head.parentNode.removeChild(head);" +
                                           "})()")
-                                  .then((value) => debugPrint('Page finished loading Javascript'))
-                                  .catchError((onError) => debugPrint('$onError'));
+                                  .then((value) => debugPrint(
+                                      'Page finished loading Javascript'))
+                                  .catchError(
+                                      (onError) => debugPrint('$onError'));
                             }
                             if (hideFooter == true) {
                               webViewController!
@@ -283,8 +311,10 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                                           "var footer = document.getElementsByTagName('footer')[0];" +
                                           "footer.parentNode.removeChild(footer);" +
                                           "})()")
-                                  .then((value) => debugPrint('Page finished loading Javascript'))
-                                  .catchError((onError) => debugPrint('$onError'));
+                                  .then((value) => debugPrint(
+                                      'Page finished loading Javascript'))
+                                  .catchError(
+                                      (onError) => debugPrint('$onError'));
                             }
                           },
                           onLoadError: (controller, url, code, message) async {
@@ -293,11 +323,16 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
 
                             setState(() {
                               isLoading = false;
-                              if (Platform.isAndroid && code == -2 && message == 'net::ERR_INTERNET_DISCONNECTED') {
+                              if (Platform.isAndroid &&
+                                  code == -2 &&
+                                  message == 'net::ERR_INTERNET_DISCONNECTED') {
                                 noInternet = true;
                                 return;
                               }
-                              if (Platform.isIOS && code == -1009 && message == 'The Internet connection appears to be offline.') {
+                              if (Platform.isIOS &&
+                                  code == -1009 &&
+                                  message ==
+                                      'The Internet connection appears to be offline.') {
                                 noInternet = true;
                                 return;
                               }
@@ -306,7 +341,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                               }
                             });
                           },
-                          onLoadHttpError: (controller, url, statusCode, description) {
+                          onLoadHttpError:
+                              (controller, url, statusCode, description) {
                             // _pullToRefreshController.endRefreshing();
                             // print(
                             //     '---load http error----$description==$statusCode');
@@ -315,22 +351,32 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                               isLoading = false;
                             });
                           },
-                          onReceivedServerTrustAuthRequest: (controller, challenge) async {
-                            return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+                          onReceivedServerTrustAuthRequest:
+                              (controller, challenge) async {
+                            return ServerTrustAuthResponse(
+                                action: ServerTrustAuthResponseAction.PROCEED);
                           },
-                          androidOnGeolocationPermissionsShowPrompt: (controller, origin) async {
+                          androidOnGeolocationPermissionsShowPrompt:
+                              (controller, origin) async {
                             await Permission.location.request();
-                            return Future.value(GeolocationPermissionShowPromptResponse(origin: origin, allow: true, retain: true));
+                            return Future.value(
+                                GeolocationPermissionShowPromptResponse(
+                                    origin: origin, allow: true, retain: true));
                           },
-                          androidOnPermissionRequest: (controller, origin, resources) async {
-                            if (resources.contains('android.webkit.resource.AUDIO_CAPTURE')) {
+                          androidOnPermissionRequest:
+                              (controller, origin, resources) async {
+                            if (resources.contains(
+                                'android.webkit.resource.AUDIO_CAPTURE')) {
                               await Permission.microphone.request();
                             }
-                            if (resources.contains('android.webkit.resource.VIDEO_CAPTURE')) {
+                            if (resources.contains(
+                                'android.webkit.resource.VIDEO_CAPTURE')) {
                               await Permission.camera.request();
                             }
 
-                            return PermissionRequestResponse(resources: resources, action: PermissionRequestResponseAction.GRANT);
+                            return PermissionRequestResponse(
+                                resources: resources,
+                                action: PermissionRequestResponseAction.GRANT);
                           },
                           onProgressChanged: (controller, progress) {
                             if (progress == 100) {
@@ -341,12 +387,14 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                               this.progress = progress / 100;
                             });
                           },
-                          shouldOverrideUrlLoading: (controller, navigationAction) async {
+                          shouldOverrideUrlLoading:
+                              (controller, navigationAction) async {
                             var url = navigationAction.request.url.toString();
                             var uri = Uri.parse(url);
 
                             if (Platform.isIOS && url.contains("geo")) {
-                              url = url.replaceFirst('geo://', 'http://maps.apple.com/');
+                              url = url.replaceFirst(
+                                  'geo://', 'http://maps.apple.com/');
                             } else if (url.contains("tel:") ||
                                 url.contains("mailto:") ||
                                 url.contains("play.google.com") ||
@@ -381,7 +429,16 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                                 return NavigationActionPolicy.CANCEL;
                               }
                             }
-
+                            print(
+                                "navigationAction.request.url ${navigationAction.request.url}");
+                            if (navigationAction.request.url
+                                    .toString()
+                                    .contains("https://wa.me/") ||
+                                navigationAction.request.url
+                                    .toString()
+                                    .contains("whatsapp://send")) {
+                              return NavigationActionPolicy.CANCEL;
+                            }
                             return NavigationActionPolicy.ALLOW;
                           },
                           onCloseWindow: (controller) async {
@@ -416,7 +473,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
 
                           //   return true;
                           // },
-                          onDownloadStartRequest: (controller, downloadStartRrquest) async {
+                          onDownloadStartRequest:
+                              (controller, downloadStartRrquest) async {
                             // print('=--download--$url');
 
                             enableStoragePermision().then((status) async {
@@ -427,49 +485,74 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                                   Dio dio = Dio();
                                   String fileName;
                                   if (url.toString().lastIndexOf('?') > 0) {
-                                    fileName = url.toString().substring(url.toString().lastIndexOf('/') + 1, url.toString().lastIndexOf('?'));
+                                    fileName = url.toString().substring(
+                                        url.toString().lastIndexOf('/') + 1,
+                                        url.toString().lastIndexOf('?'));
                                   } else {
-                                    fileName = url.toString().substring(url.toString().lastIndexOf('/') + 1);
+                                    fileName = url.toString().substring(
+                                        url.toString().lastIndexOf('/') + 1);
                                   }
                                   String savePath = await getFilePath(fileName);
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
                                     content: const Text('Downloading file..'),
                                   ));
-                                  await dio.download(url.toString(), savePath, onReceiveProgress: (rec, total) {});
+                                  await dio.download(url.toString(), savePath,
+                                      onReceiveProgress: (rec, total) {});
 
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
                                     content: const Text('Download Complete'),
                                   ));
                                 } on Exception catch (_) {
-                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
                                     content: const Text('Downloading failed'),
                                   ));
                                 }
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
                                   content: const Text('Permision denied'),
                                 ));
                               }
                             });
                           },
-                          onUpdateVisitedHistory: (controller, url, androidIsReload) async {
+                          onUpdateVisitedHistory:
+                              (controller, url, androidIsReload) async {
                             setState(() {
                               this.url = url.toString();
                             });
                           },
-                          onConsoleMessage: (controller, consoleMessage) {
+                          onConsoleMessage: (controller, consoleMessage) async {
                             print("consoleMessage.message");
                             print(consoleMessage.message);
-                            if (consoleMessage.message.contains("share_event;")) {
-                              String data = consoleMessage.message.replaceAll("share_event;", "").trim();
+                            if (consoleMessage.message
+                                .contains("share_event;")) {
+                              String data = consoleMessage.message
+                                  .replaceAll("share_event;", "")
+                                  .trim();
                               Map values = jsonDecode(data);
                               print(jsonDecode(data));
                               print(jsonDecode(data)['title']);
 
-                              Share.shareWithResult("${values['title']}\nhttps://motorzkw.com${values['url']}\n${values['text']}",
-                              subject: '',
+                              Share.shareWithResult(
+                                "${values['title']}\nhttps://motorzkw.com${values['url']}\n${values['text']}",
+                                subject: '',
                               );
+                            }
+                            if (consoleMessage.message
+                                .contains("whatsapp_event;")) {
+                              String data = consoleMessage.message
+                                  .replaceAll("whatsapp_event;", "")
+                                  .trim();
+                              String iosUrl =
+                                  "https://api.whatsapp.com/send/?phone=%2B${data.replaceAll("+", '')}&text&type=phone_number&app_absent=0";
+                              print("========= $data");
 
+                              if (await canLaunchUrl(Uri.parse(iosUrl))) {
+                                await launchUrl(Uri.parse(iosUrl));
+                              }
                             }
                           },
                         )
@@ -514,9 +597,15 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Theme.of(context).progressIndicatorTheme.color!,
-                                  Theme.of(context).progressIndicatorTheme.refreshBackgroundColor!,
-                                  Theme.of(context).progressIndicatorTheme.linearTrackColor!,
+                                  Theme.of(context)
+                                      .progressIndicatorTheme
+                                      .color!,
+                                  Theme.of(context)
+                                      .progressIndicatorTheme
+                                      .refreshBackgroundColor!,
+                                  Theme.of(context)
+                                      .progressIndicatorTheme
+                                      .linearTrackColor!,
                                 ],
                                 stops: const [0.1, 1.0, 0.1],
                               ),
@@ -577,7 +666,8 @@ class _LoadWebViewState extends State<LoadWebView> with SingleTickerProviderStat
         externalStorageDirPath = directory?.path;
       }
     } else if (Platform.isIOS) {
-      externalStorageDirPath = (await getApplicationDocumentsDirectory()).absolute.path;
+      externalStorageDirPath =
+          (await getApplicationDocumentsDirectory()).absolute.path;
     }
     path = '$externalStorageDirPath/$uniqueFileName';
     return path;
