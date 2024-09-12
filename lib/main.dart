@@ -135,26 +135,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  bool showAppContent = true;
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    setState(() {
-      showAppContent = state == AppLifecycleState.resumed;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
+class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
@@ -179,13 +160,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           color: Colors.white,
           theme: AppThemes.lightTheme,
           darkTheme: AppThemes.darkTheme,
-          navigatorKey: navigatorKey,
-          onGenerateRoute: (RouteSettings settings) {
-            switch (settings.name) {
-              case 'settings':
-                return CupertinoPageRoute(builder: (_) => SettingsScreen());
-            }
-          },
           home: Visibility(
               maintainAnimation: true,
               maintainSize: true,

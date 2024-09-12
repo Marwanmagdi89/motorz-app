@@ -48,18 +48,12 @@ class _LoadWebViewState extends State<LoadWebView>
   double progress = 0;
   String url = '';
   int _previousScrollY = 0;
-  bool isLoading = false;
-  bool showErrorPage = false;
-  bool slowInternetPage = false;
-  bool noInternet = false;
   late AnimationController animationController;
   late Animation<double> animation;
   final expiresDate =
       DateTime.now().add(Duration(days: 7)).millisecondsSinceEpoch;
-  String _connectionStatus = 'ConnectivityResult.none';
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
-  var browserOptions;
   bool _validURL = false;
   bool canGoBack = false;
 
@@ -67,24 +61,7 @@ class _LoadWebViewState extends State<LoadWebView>
   void initState() {
     super.initState();
     _validURL = Uri.tryParse(widget.url)?.isAbsolute ?? false;
-    NoInternet.initConnectivity().then((value) => setState(() {
-          _connectionStatus = value;
-        }));
-    _connectivitySubscription =
-        _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
-      NoInternet.updateConnectionStatus(result).then((value) {
-        _connectionStatus = value;
-        if (_connectionStatus != 'ConnectivityResult.none') {
-          setState(() {
-            noInternet = false;
-          });
-        } else {
-          setState(() {
-            noInternet = true;
-          });
-        }
-      });
-    });
+
     // try {
     //   // _pullToRefreshController = PullToRefreshController(
     //   //   options: PullToRefreshOptions(color: primaryColor),
@@ -159,462 +136,157 @@ class _LoadWebViewState extends State<LoadWebView>
       },
       child: WillPopScope(
         onWillPop: () => _exitApp(context),
-        child: !widget.webUrl
-            ? InAppWebView(
-                initialData: InAppWebViewInitialData(
-                    data: widget.url, mimeType: 'text/html', encoding: "utf8"),
-                initialOptions: InAppWebViewGroupOptions(
-                    crossPlatform: InAppWebViewOptions(
-                      useShouldOverrideUrlLoading: true,
-                      cacheEnabled: true,
-                      verticalScrollBarEnabled: false,
-                      horizontalScrollBarEnabled: false,
-                      transparentBackground: true,
-                      supportZoom: false,
-                      allowFileAccessFromFileURLs: true,
-                    ),
-                    android: AndroidInAppWebViewOptions(
-                        useHybridComposition: true, defaultFontSize: 32),
-                    ios: IOSInAppWebViewOptions(
-                      allowsInlineMediaPlayback: true,
-                    )),
-                onConsoleMessage: (controller, consoleMessage) async {
-                  if (consoleMessage.message.contains("profile image:")) {
-                    String data = consoleMessage.message
-                        .replaceAll("profile image:", "")
-                        .trim();
-                    String url = data.split(";").first;
-                    String accessToken = data.split(";").last;
-                    await pickProfileImage(context, url, accessToken);
-                    controller.reload();
+        child: InAppWebView(
+          initialUrlRequest:
+          URLRequest(url: Uri.parse(widget.url)),
+          initialOptions: options,
+
+          // pullToRefreshController: _pullToRefreshController,
+          gestureRecognizers: <Factory<
+              OneSequenceGestureRecognizer>>{
+            Factory<OneSequenceGestureRecognizer>(
+                    () => EagerGestureRecognizer()),
+          },
+          onWebViewCreated: (controller) async {
+            webViewController = controller;
+          },
+          shouldOverrideUrlLoading:
+              (controller, navigationAction) async {
+            var url = navigationAction.request.url.toString();
+            var uri = Uri.parse(url);
+
+            if (Platform.isIOS && url.contains("geo")) {
+              url = url.replaceFirst(
+                  'geo://', 'http://maps.apple.com/');
+            } else if (url.contains("tel:") ||
+                url.contains("mailto:") ||
+                url.contains("play.google.com") ||
+                url.contains("maps") ||
+                url.contains("messenger.com")) {
+              url = Uri.encodeFull(url);
+              try {
+                if (await canLaunchUrl(uri)) {
+                  launchUrl(uri);
+                } else {
+                  launchUrl(uri);
+                }
+                return NavigationActionPolicy.CANCEL;
+              } catch (e) {
+                launchUrl(uri);
+                return NavigationActionPolicy.CANCEL;
+              }
+            } else if (![
+              "http",
+              "https",
+              "file",
+              "chrome",
+              "data",
+              "javascript",
+            ].contains(uri.scheme)) {
+              if (await canLaunchUrl(uri)) {
+                // Launch the App
+                await launchUrl(
+                  uri,
+                );
+                // and cancel the request
+                return NavigationActionPolicy.CANCEL;
+              }
+            }
+            print(
+                "navigationAction.request.url ${navigationAction.request.url}");
+            if (Platform.isIOS && (navigationAction.request.url
+                .toString()
+                .contains("https://wa.me/") ||
+                navigationAction.request.url
+                    .toString()
+                    .contains("whatsapp://send"))) {
+              return NavigationActionPolicy.CANCEL;
+            }
+            return NavigationActionPolicy.ALLOW;
+          },
+          onDownloadStartRequest:
+              (controller, downloadStartRrquest) async {
+            // print('=--download--$url');
+
+            enableStoragePermision().then((status) async {
+              String url = downloadStartRrquest.url.toString();
+
+              if (status == true) {
+                try {
+                  Dio dio = Dio();
+                  String fileName;
+                  if (url.toString().lastIndexOf('?') > 0) {
+                    fileName = url.toString().substring(
+                        url.toString().lastIndexOf('/') + 1,
+                        url.toString().lastIndexOf('?'));
+                  } else {
+                    fileName = url.toString().substring(
+                        url.toString().lastIndexOf('/') + 1);
                   }
-                  print(consoleMessage.message);
-                  if (consoleMessage.message.contains("share_event;")) {
-                    String data = consoleMessage.message
-                        .replaceAll("share_event;", "")
-                        .trim();
-                    print(data);
-                  }
-                },
-                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                  Factory<OneSequenceGestureRecognizer>(
-                    () => EagerGestureRecognizer(),
-                  ),
-                },
-                onWebViewCreated: (controller) {
-                  webViewController = controller;
-                },
-                onLoadStart: (controller, url) {
-                  setState(() {
-                    this.url = url.toString();
-                  });
-                },
-                shouldOverrideUrlLoading: (controller, navigationAction) async {
-                  print(
-                      "navigationAction.request.url ${navigationAction.request.url}");
-                  return NavigationActionPolicy.ALLOW;
-                },
-              )
-            : Stack(
-                alignment: AlignmentDirectional.topStart,
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  _validURL
-                      ? InAppWebView(
-                          initialUrlRequest:
-                              URLRequest(url: Uri.parse(widget.url)),
-                          initialOptions: options,
+                  String savePath = await getFilePath(fileName);
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(
+                    content: const Text('Downloading file..'),
+                  ));
+                  await dio.download(url.toString(), savePath,
+                      onReceiveProgress: (rec, total) {});
 
-                          // pullToRefreshController: _pullToRefreshController,
-                          gestureRecognizers: <Factory<
-                              OneSequenceGestureRecognizer>>{
-                            Factory<OneSequenceGestureRecognizer>(
-                                () => EagerGestureRecognizer()),
-                          },
-                          onWebViewCreated: (controller) async {
-                            webViewController = controller;
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(
+                    content: const Text('Download Complete'),
+                  ));
+                } on Exception catch (_) {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(
+                    content: const Text('Downloading failed'),
+                  ));
+                }
+              } else {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(
+                  content: const Text('Permision denied'),
+                ));
+              }
+            });
+          },
+          onUpdateVisitedHistory:
+              (controller, url, androidIsReload) async {
+            setState(() {
+              this.url = url.toString();
+            });
+          },
+          onConsoleMessage: (controller, consoleMessage) async {
+            print("consoleMessage.message");
+            print(consoleMessage.message);
+            if (consoleMessage.message
+                .contains("share_event;")) {
+              String data = consoleMessage.message
+                  .replaceAll("share_event;", "")
+                  .trim();
+              Map values = jsonDecode(data);
+              print(jsonDecode(data));
+              print(jsonDecode(data)['title']);
 
-                            await cookieManager.setCookie(
-                              url: Uri.parse(widget.url),
-                              name: "myCookie",
-                              value: "myValue",
-                              // domain: ".flutter.dev",
-                              expiresDate: expiresDate,
-                              isHttpOnly: false,
-                              isSecure: true,
-                            );
-                          },
-                          onScrollChanged: (controller, x, y) async {
-                            int currentScrollY = y;
-                            if (currentScrollY > _previousScrollY) {
-                              _previousScrollY = currentScrollY;
-                              if (!context
-                                  .read<NavigationBarProvider>()
-                                  .animationController
-                                  .isAnimating) {
-                                context
-                                    .read<NavigationBarProvider>()
-                                    .animationController
-                                    .forward();
-                              }
-                            } else {
-                              _previousScrollY = currentScrollY;
+              Share.shareWithResult(
+                "${values['title']}\nhttps://motorzkw.com${values['url']}\n${values['text']}",
+                subject: '',
+              );
+            }
+            if (consoleMessage.message
+                .contains("whatsapp_event;")) {
+              String data = consoleMessage.message
+                  .replaceAll("whatsapp_event;", "")
+                  .trim();
+              String iosUrl =
+                  "https://api.whatsapp.com/send/?phone=%2B${data.replaceAll("+", '')}&text&type=phone_number&app_absent=0";
+              print("========= $data");
 
-                              if (!context
-                                  .read<NavigationBarProvider>()
-                                  .animationController
-                                  .isAnimating) {
-                                context
-                                    .read<NavigationBarProvider>()
-                                    .animationController
-                                    .reverse();
-                              }
-                            }
-                          },
-
-                          onLoadStart: (controller, url) async {
-                            setState(() {
-                              isLoading = true;
-                              showErrorPage = false;
-                              slowInternetPage = false;
-                            });
-
-                            setState(() {
-                              this.url = url.toString();
-                            });
-                          },
-                          onLoadStop: (controller, url) async {
-                            // _pullToRefreshController.endRefreshing();
-
-                            setState(() {
-                              this.url = url.toString();
-                              isLoading = false;
-                            });
-
-                            // Removes header and footer from page
-                            if (hideHeader == true) {
-                              webViewController!
-                                  .evaluateJavascript(
-                                      source: "javascript:(function() { " +
-                                          "var head = document.getElementsByTagName('header')[0];" +
-                                          "head.parentNode.removeChild(head);" +
-                                          "})()")
-                                  .then((value) => debugPrint(
-                                      'Page finished loading Javascript'))
-                                  .catchError(
-                                      (onError) => debugPrint('$onError'));
-                            }
-                            if (hideFooter == true) {
-                              webViewController!
-                                  .evaluateJavascript(
-                                      source: "javascript:(function() { " +
-                                          "var footer = document.getElementsByTagName('footer')[0];" +
-                                          "footer.parentNode.removeChild(footer);" +
-                                          "})()")
-                                  .then((value) => debugPrint(
-                                      'Page finished loading Javascript'))
-                                  .catchError(
-                                      (onError) => debugPrint('$onError'));
-                            }
-                          },
-                          onLoadError: (controller, url, code, message) async {
-                            // _pullToRefreshController.endRefreshing();
-                            // print('---load error----==$code ---$message');
-
-                            setState(() {
-                              isLoading = false;
-                              if (Platform.isAndroid &&
-                                  code == -2 &&
-                                  message == 'net::ERR_INTERNET_DISCONNECTED') {
-                                noInternet = true;
-                                return;
-                              }
-                              if (Platform.isIOS &&
-                                  code == -1009 &&
-                                  message ==
-                                      'The Internet connection appears to be offline.') {
-                                noInternet = true;
-                                return;
-                              }
-                              if (code != 102) {
-                                slowInternetPage = true;
-                              }
-                            });
-                          },
-                          onLoadHttpError:
-                              (controller, url, statusCode, description) {
-                            // _pullToRefreshController.endRefreshing();
-                            // print(
-                            //     '---load http error----$description==$statusCode');
-                            setState(() {
-                              showErrorPage = true;
-                              isLoading = false;
-                            });
-                          },
-                          onReceivedServerTrustAuthRequest:
-                              (controller, challenge) async {
-                            return ServerTrustAuthResponse(
-                                action: ServerTrustAuthResponseAction.PROCEED);
-                          },
-                          androidOnGeolocationPermissionsShowPrompt:
-                              (controller, origin) async {
-                            await Permission.location.request();
-                            return Future.value(
-                                GeolocationPermissionShowPromptResponse(
-                                    origin: origin, allow: true, retain: true));
-                          },
-                          androidOnPermissionRequest:
-                              (controller, origin, resources) async {
-                            if (resources.contains(
-                                'android.webkit.resource.AUDIO_CAPTURE')) {
-                              await Permission.microphone.request();
-                            }
-                            if (resources.contains(
-                                'android.webkit.resource.VIDEO_CAPTURE')) {
-                              await Permission.camera.request();
-                            }
-
-                            return PermissionRequestResponse(
-                                resources: resources,
-                                action: PermissionRequestResponseAction.GRANT);
-                          },
-                          onProgressChanged: (controller, progress) {
-                            if (progress == 100) {
-                              // _pullToRefreshController.endRefreshing();
-                              isLoading = false;
-                            }
-                            setState(() {
-                              this.progress = progress / 100;
-                            });
-                          },
-                          shouldOverrideUrlLoading:
-                              (controller, navigationAction) async {
-                            var url = navigationAction.request.url.toString();
-                            var uri = Uri.parse(url);
-
-                            if (Platform.isIOS && url.contains("geo")) {
-                              url = url.replaceFirst(
-                                  'geo://', 'http://maps.apple.com/');
-                            } else if (url.contains("tel:") ||
-                                url.contains("mailto:") ||
-                                url.contains("play.google.com") ||
-                                url.contains("maps") ||
-                                url.contains("messenger.com")) {
-                              url = Uri.encodeFull(url);
-                              try {
-                                if (await canLaunchUrl(uri)) {
-                                  launchUrl(uri);
-                                } else {
-                                  launchUrl(uri);
-                                }
-                                return NavigationActionPolicy.CANCEL;
-                              } catch (e) {
-                                launchUrl(uri);
-                                return NavigationActionPolicy.CANCEL;
-                              }
-                            } else if (![
-                              "http",
-                              "https",
-                              "file",
-                              "chrome",
-                              "data",
-                              "javascript",
-                            ].contains(uri.scheme)) {
-                              if (await canLaunchUrl(uri)) {
-                                // Launch the App
-                                await launchUrl(
-                                  uri,
-                                );
-                                // and cancel the request
-                                return NavigationActionPolicy.CANCEL;
-                              }
-                            }
-                            print(
-                                "navigationAction.request.url ${navigationAction.request.url}");
-                            if (Platform.isIOS && (navigationAction.request.url
-                                    .toString()
-                                    .contains("https://wa.me/") ||
-                                navigationAction.request.url
-                                    .toString()
-                                    .contains("whatsapp://send"))) {
-                              return NavigationActionPolicy.CANCEL;
-                            }
-                            return NavigationActionPolicy.ALLOW;
-                          },
-                          onCloseWindow: (controller) async {
-                            //  webViewController!.evaluateJavascript(source:'document.cookie = "token=$token"');
-                          },
-                          // onCreateWindow:
-                          //     (controller, createWindowRequest) async {
-                          //   showDialog(
-                          //     context: context,
-                          //     builder: (context) {
-                          //       return AlertDialog(
-                          //         content: Container(
-                          //           width: MediaQuery.of(context).size.width,
-                          //           height: MediaQuery.of(context).size.width,
-                          //           child: InAppWebView(
-                          //             // Setting the windowId property is important here!
-                          //             initialUrlRequest:
-                          //                 URLRequest(url: Uri.parse(url)),
-                          //             windowId: createWindowRequest.windowId,
-                          //             initialOptions: InAppWebViewGroupOptions(
-                          //               android: AndroidInAppWebViewOptions(),
-                          //             ),
-                          //             onWebViewCreated:
-                          //                 (InAppWebViewController controller) {
-                          //               webViewController = controller;
-                          //             },
-                          //           ),
-                          //         ),
-                          //       );
-                          //     },
-                          //   );
-
-                          //   return true;
-                          // },
-                          onDownloadStartRequest:
-                              (controller, downloadStartRrquest) async {
-                            // print('=--download--$url');
-
-                            enableStoragePermision().then((status) async {
-                              String url = downloadStartRrquest.url.toString();
-
-                              if (status == true) {
-                                try {
-                                  Dio dio = Dio();
-                                  String fileName;
-                                  if (url.toString().lastIndexOf('?') > 0) {
-                                    fileName = url.toString().substring(
-                                        url.toString().lastIndexOf('/') + 1,
-                                        url.toString().lastIndexOf('?'));
-                                  } else {
-                                    fileName = url.toString().substring(
-                                        url.toString().lastIndexOf('/') + 1);
-                                  }
-                                  String savePath = await getFilePath(fileName);
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                    content: const Text('Downloading file..'),
-                                  ));
-                                  await dio.download(url.toString(), savePath,
-                                      onReceiveProgress: (rec, total) {});
-
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                    content: const Text('Download Complete'),
-                                  ));
-                                } on Exception catch (_) {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                    content: const Text('Downloading failed'),
-                                  ));
-                                }
-                              } else {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: const Text('Permision denied'),
-                                ));
-                              }
-                            });
-                          },
-                          onUpdateVisitedHistory:
-                              (controller, url, androidIsReload) async {
-                            setState(() {
-                              this.url = url.toString();
-                            });
-                          },
-                          onConsoleMessage: (controller, consoleMessage) async {
-                            print("consoleMessage.message");
-                            print(consoleMessage.message);
-                            if (consoleMessage.message
-                                .contains("share_event;")) {
-                              String data = consoleMessage.message
-                                  .replaceAll("share_event;", "")
-                                  .trim();
-                              Map values = jsonDecode(data);
-                              print(jsonDecode(data));
-                              print(jsonDecode(data)['title']);
-
-                              Share.shareWithResult(
-                                "${values['title']}\nhttps://motorzkw.com${values['url']}\n${values['text']}",
-                                subject: '',
-                              );
-                            }
-                            if (consoleMessage.message
-                                .contains("whatsapp_event;")) {
-                              String data = consoleMessage.message
-                                  .replaceAll("whatsapp_event;", "")
-                                  .trim();
-                              String iosUrl =
-                                  "https://api.whatsapp.com/send/?phone=%2B${data.replaceAll("+", '')}&text&type=phone_number&app_absent=0";
-                              print("========= $data");
-
-                              if (Platform.isIOS && await canLaunchUrl(Uri.parse(iosUrl))) {
-                                await launchUrl(Uri.parse(iosUrl));
-                              }
-                            }
-                          },
-                        )
-                      : Center(
-                          child: Text(
-                          'Url is not valid',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        )),
-                  isLoading
-                      ? Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : SizedBox(height: 0, width: 0),
-                  noInternet
-                      ? Center(
-                          child: NoInternetWidget(),
-                        )
-                      : SizedBox(height: 0, width: 0),
-                  showErrorPage
-                      ? Center(
-                          child: NotFound(
-                              webViewController: webViewController!,
-                              url: url,
-                              title1: CustomStrings.pageNotFound1,
-                              title2: CustomStrings.pageNotFound2))
-                      : SizedBox(height: 0, width: 0),
-                  slowInternetPage
-                      ? Center(
-                          child: NotFound(
-                              webViewController: webViewController!,
-                              url: url,
-                              title1: CustomStrings.incorrectURL1,
-                              title2: CustomStrings.incorrectURL2))
-                      : SizedBox(height: 0, width: 0),
-                  progress < 1.0 && _validURL
-                      ? SizeTransition(
-                          sizeFactor: animation,
-                          axis: Axis.horizontal,
-                          child: Container(
-                            width: MediaQuery.of(context).size.width,
-                            height: 5.0,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Theme.of(context)
-                                      .progressIndicatorTheme
-                                      .color!,
-                                  Theme.of(context)
-                                      .progressIndicatorTheme
-                                      .refreshBackgroundColor!,
-                                  Theme.of(context)
-                                      .progressIndicatorTheme
-                                      .linearTrackColor!,
-                                ],
-                                stops: const [0.1, 1.0, 0.1],
-                              ),
-                            ),
-                          ),
-                        )
-                      : SizedBox.shrink(),
-                ],
-              ),
+              if (Platform.isIOS && await canLaunchUrl(Uri.parse(iosUrl))) {
+                await launchUrl(Uri.parse(iosUrl));
+              }
+            }
+          },
+        ),
       ),
     );
   }
@@ -627,9 +299,6 @@ class _LoadWebViewState extends State<LoadWebView>
       return Future.value(true);
     }
     if (await webViewController!.canGoBack()) {
-      setState(() {
-        noInternet = false;
-      });
       webViewController!.goBack();
       return Future.value(false);
     } else {
